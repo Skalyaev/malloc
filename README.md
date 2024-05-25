@@ -5,9 +5,11 @@
 
 ## Checklist
 
-* [ ] `void* malloc(size_t size)`: Alloue `size` octets de mémoire et renvoie un pointeur vers la zone mémoire allouée
-* [ ] `void* realloc(void *ptr, size_t size)`: Modifie la taille de l'allocation pointée par `ptr` à `size`, et renvoie `ptr`
-* [ ] `void* free(void *ptr)`: Désalloue la mémoire allouée pointée par `ptr`
-* [ ] `void show_alloc_mem_ex()`: Permet de visualiser l'état des zones de mémoire allouées
-* [ ] Debug environment variables
-* [ ] Défragmentation de la mémoire libérée
+* [x] `void* malloc(size_t size)`: Alloue `size` octets de mémoire et renvoie un pointeur vers la zone mémoire allouée
+* [x] `void* realloc(void* ptr, size_t size)`: Modifie la taille de l'allocation pointée par `ptr` à `size`, et renvoie `ptr`
+* [x] `void free(void* ptr)`: Désalloue la mémoire allouée pointée par `ptr`
+* [x] `void show_alloc_mem_ex()`: Permet de visualiser l'état des zones de mémoire allouées
+* [x] Debug environment variables
+* [x] Défragmentation de la mémoire libérée
+* [ ] Multi-thread support
+* [ ] `extra` `void* calloc(size_t nmemb, size_t size)`: Alloue de la mémoire pour un tableau de `nmemb` éléments de `size` octets chacun, et renvoie un pointeur vers la zone mémoire allouée
