@@ -21,8 +21,7 @@ Fixed* init_fixed(const size_t size){
     return area;
 }
 
-void* get_fixed(Fixed* area, const size_t type,
-                const size_t size){
+void* get_fixed(Fixed* area, const size_t type, const size_t size){
     while (area->next_ptr == STACK_BUFF - 1){
         if (area->next == NULL){
             area->next = init_fixed(type);
