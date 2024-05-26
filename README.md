@@ -6,7 +6,6 @@
 ## Checklist
 
 * [x] `void* malloc(size_t size)`: Alloue `size` octets de mémoire via `mmap`
-* [x] `EXTRA` `void* calloc(size_t nmemb, size_t size)`: Alloue de la mémoire pour un tableau de `nmemb` éléments de `size` octets chacun
 * [x] `void* realloc(void* ptr, size_t size)`: Modifie la taille de l'allocation pointée par `ptr` à `size`
 * [x] `void free(void* ptr)`: Désalloue la mémoire allouée pointée par `ptr`
 * [x] `void show_alloc_mem()`: Permet de visualiser l'état des zones de mémoire allouées
@@ -15,6 +14,7 @@
 * [x] `BONUS` Thread-safe
 * [x] `BONUS` Variables d'environnement de debug
 * [x] `EXTRA` `int mallopt(int opt, int value)`: Permet de modifier le comportement de la malloc
+* [x] `EXTRA` `void* calloc(size_t nmemb, size_t size)`: Alloue de la mémoire pour un tableau de `nmemb` éléments de `size` octets chacun
 
 ### Debug environnement variables
 
