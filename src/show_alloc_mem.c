@@ -1,50 +1,54 @@
 #include "../include/header.h"
 
 extern Memory memory;
+extern pthread_mutex_t lock;
 
-void show_dump(const void* const ptr, const size_t size){
-    printf("%s+--------------------------------------+%s\n",
-            GRAY, RESET);
-    for (size_t x = 0; x < size; x++){
-        printf("%s|  %s", GRAY, GREEN);
+static void show_dump(const void* const ptr, const size_t size){
+    char hex[3] = "   ";
+    static const char* const base = "0123456789abcdef";
+    ft_putstr(GRAY"+-------------------------------------+"RESET,
+              STDOUT);
+    for (size_t x = 0; x < size; x += 8){
+        ft_putstr(GRAY"|  "GREEN, STDOUT);
+        for (size_t y = x; y < x + 8 && y < size; y++){
 
-        for (size_t y = 0; y < 8; y++){
-            if (x + y >= size) break;
-            printf("%02x ", ((byte*)ptr)[x + y]);
+            hex[0] = base[((byte*)ptr)[y] / 16];
+            hex[1] = base[((byte*)ptr)[y] % 16];
+            write(STDOUT, hex, 3);
         }
-        printf("    ");
-        for (size_t y = 0; y < 8; y++){
-            if (x + y >= size) break;
-            if (((byte*)ptr)[x + y] < 0x20 ||
-                ((byte*)ptr)[x + y] > 0x7e) printf(".");
-            else printf("%c", ((byte*)ptr)[x + y]);
+        write(STDOUT, "  ", 2);
+        for (size_t y = x; y < x + 8 && y < size; y++){
+
+            if (((byte*)ptr)[y] < 32 || ((byte*)ptr)[y] > 126)
+                write(STDOUT, ".", 1);
+            else write(STDOUT, &((byte*)ptr)[y], 1);
         }
-        printf("%s  |%s\n", GRAY, RESET);
+        ft_putstr(GRAY"  |----[ "RESET, STDOUT);
+        ft_putaddr(ptr + x, STDOUT);
+        ft_putstr(GRAY" ]"RESET"\n", STDOUT);
     }
-    printf("%s+--------------------------------------+%s\n",
-            GRAY, RESET);
+    ft_putstr(GRAY"+-------------------------------------+"RESET,
+              STDOUT);
 }
 
-bool set_dump(const bool set){
+static bool set_dump(const bool set){
     static bool dump = NO;
     if (set > 0) dump = set;
     return dump;
 }
 
-Fixed* show_fixed(const Fixed* ptr, const bool dump,
-                  const size_t type, size_t* const allocated,
-                  size_t* const used){
+static Fixed* show_fixed(const Fixed* ptr, const bool dump){
     while (YES){
-        *allocated += type * STACK_BUFF;
         for (size_t x = 0; x < STACK_BUFF; x++){
-            if (!ptr->stack[x]) continue;
-            *used += ptr->used[x];
-
-            printf("%s| [%s%p%s]----[%s%p%s]----> %s%lu%s\n", GRAY,
-                   RESET, ptr->stack[x], GRAY,
-                   RESET, ptr->stack[x] + ptr->used[x],
-                   GRAY, GREEN, ptr->used[x], RESET);
-            if (dump == YES) show_dump(ptr->stack[x], ptr->used[x]);
+            if (!ptr->ptr[x]) continue;
+            ft_putstr(GRAY"| [ "RESET, STDOUT);
+            ft_putaddr(ptr->ptr[x], STDOUT);
+            ft_putstr(GRAY" ]----[ "RESET, STDOUT);
+            ft_putaddr(ptr->ptr[x] + ptr->used[x], STDOUT);
+            ft_putstr(GRAY" ]----> "GREEN, STDOUT);
+            ft_putnbr(ptr->used[x], STDOUT);
+            ft_putstr(RESET" bytes\n", STDOUT);
+            if (dump == YES) show_dump(ptr->ptr[x], ptr->used[x]);
         }
         if (!ptr->next) break;
         ptr = ptr->next;
@@ -52,52 +56,64 @@ Fixed* show_fixed(const Fixed* ptr, const bool dump,
     return ptr;
 }
 
+static void show_variable(){
+    ft_putstr(GRAY"+--------LARGE---[ "RESET, STDOUT);
+    ft_putaddr(memory.variable.memory, STDOUT);
+    ft_putstr(GRAY" ]"RESET"\n", STDOUT);
+
+    for (ptr = memory.variable; ptr; ptr = ptr->next){
+        ft_putstr(GRAY"| [ "RESET, STDOUT);
+        ft_putaddr(ptr.memory, STDOUT);
+        ft_putstr(GRAY" ]----[ "RESET, STDOUT);
+        ft_putaddr(ptr.memory + ptr.used, STDOUT);
+        ft_putstr(GRAY" ]----> "GREEN, STDOUT);
+        ft_putnbr(ptr.used, STDOUT);
+        ft_putstr(RESET" bytes\n", STDOUT);
+        if (dump == YES) show_dump(ptr.memory, ptr.used);
+    }
+    ft_putstr(GRAY"+----------------[ "RESET, STDOUT);
+    ft_putaddr(ptr.memory + ptr.size, STDOUT);
+    ft_putstr(GRAY" ]"RESET"\n", STDOUT);
+}
+
 void show_alloc_mem(){
     Variable* ptr;
-    size_t allocated = 0;
-    size_t used = 0;
+    pthread_mutex_lock(&lock);
     const bool dump = set_dump(-1);
-    if (memory.tiny){
-        printf("%s+--------TINY----[%s%p%s]%s\n",
-               GRAY, RESET, memory.tiny.memory, GRAY, RESET);
 
-        ptr = show_fixed(memory.tiny, dump, TINY,
-                         &allocated, &used);
-        printf("%s+----------------[%s%p%s]%s\n",
-               GRAY, RESET, ptr.memory + TINY * STACK_BUFF,
-               GRAY, RESET);
+    if (memory.tiny){
+        ft_putstr(GRAY"+--------TINY----[ "RESET, STDOUT);
+        ft_putaddr(memory.tiny.memory, STDOUT);
+        ft_putstr(GRAY" ]"RESET"\n", STDOUT);
+        ptr = show_fixed(memory.tiny, dump);
+        ft_putstr(GRAY"+----------------[ "RESET, STDOUT);
+        ft_putaddr(ptr.memory + ptr.size * STACK_BUFF, STDOUT);
+        ft_putstr(GRAY" ]"RESET"\n", STDOUT);
     }
     if (memory.small){
-        printf("%s+--------SMALL---[%s%p%s]%s\n",
-               GRAY, RESET, memory.small.memory, GRAY, RESET);
-
-        ptr = show_fixed(memory.small, dump, SMALL,
-                         &allocated, &used);
-        printf("%s+----------------[%s%p%s]%s\n",
-               GRAY, RESET, ptr.memory + SMALL * STACK_BUFF,
-               GRAY, RESET);
+        ft_putstr(GRAY"+--------SMALL---[ "RESET, STDOUT);
+        ft_putaddr(memory.small.memory, STDOUT);
+        ft_putstr(GRAY" ]"RESET"\n", STDOUT);
+        ptr = show_fixed(memory.small, dump);
+        ft_putstr(GRAY"+----------------[ "RESET, STDOUT);
+        ft_putaddr(ptr.memory + ptr.size * STACK_BUFF, STDOUT);
+        ft_putstr(GRAY" ]"RESET"\n", STDOUT);
     }
-    if (memory.variable){
-        printf("%s+--------LARGE---[%s%p%s]%s\n",
-               GRAY, RESET, memory.variable.memory, GRAY, RESET);
-
-        for (ptr = memory.variable; ptr; ptr = ptr->next){
-            allocated += ptr.size;
-            used += ptr.used;
-            printf("%s| [%s%p%s]----[%s%p%s]----> %s%lu%s\n",
-                   GRAY, RESET, ptr.memory, GRAY, RESET,
-                   ptr.memory + ptr.used, GRAY,
-                   GREEN, ptr.used, RESET);
-            if (dump == YES) show_dump(ptr.memory, ptr.used);
-        }
-        printf("%s+----------------[%s%p%s]%s\n",
-               GRAY, RESET, ptr.memory + ptr.size, GRAY, RESET);
-    }
-    printf("Allocated%s----[%s%lu%s bytes%s]%s\n",
-           GRAY, GREEN, allocated, RESET, GRAY, RESET);
-    printf("Used%s----------[%s%lu%s bytes%s]%s\n",
-           GRAY, GREEN, used, RESET, GRAY, RESET);
+    if (memory.variable) show_variable();
     set_dump(NO);
+
+    ft_putstr("Allocated"GRAY"--------[ "GREEN, STDOUT);
+    ft_putnbr(_set_env(ALLOCATED], STDOUT);
+    ft_putstr(RESET" bytes"GRAY" ]"RESET"\n", STDOUT);
+
+    ft_putstr("Used"GRAY"-------------[ "GREEN, STDOUT);
+    ft_putnbr(_set_env(IN_USE], STDOUT);
+    ft_putstr(RESET" bytes"GRAY" ]"RESET"\n", STDOUT);
+
+    ft_putstr("Freed"GRAY"------------[ "GREEN, STDOUT);
+    ft_putnbr(_set_env(FREED], STDOUT);
+    ft_putstr(RESET" bytes"GRAY" ]"RESET"\n", STDOUT);
+    pthread_mutex_unlock(&lock);
 }
 
 void show_alloc_mem_ex(){

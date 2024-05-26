@@ -1,6 +1,7 @@
 ifeq ($(HOSTTYPE),)
 HOSTTYPE := $(shell uname -m)_$(shell uname -s)
 endif
+
 NAME=libft_malloc_$(HOSTTYPE).so
 LINK=libft_malloc.so
 
@@ -15,6 +16,8 @@ SRC=$(shell find $(SRC_DIR) -type f -name *.$(SRC_EXT))
 
 OBJ_DIR=obj
 OBJ=$(patsubst $(SRC_DIR)/%.$(SRC_EXT),$(OBJ_DIR)/%.o,$(SRC))
+
+TESTER=tester
 
 all: $(NAME)
 
@@ -40,4 +43,8 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+tester:
+	$(CC) $(CFLAGS) $(TESTER).c -o $(TESTER) -L. -lft_malloc
+	@echo $(TESTER) created
+
+.PHONY: all clean fclean re tester
