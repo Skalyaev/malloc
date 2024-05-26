@@ -27,7 +27,7 @@
 ### Options `mallopt`
 
 | Option | Description | Default |
-|-|-|-|
+|:-|:-:|-:|
 | `TINY_SIZE` | Taille des blocs de mémoire fixe `TINY` | 128 |
 | `SMALL_MULT` | `TINY_SIZE * SMALL_MULT` = Taille des blocs de mémoire fixe `SMALL` | 4 |
 | `BZERO` | Initialise la mémoire allouée à 0 | 0 |
