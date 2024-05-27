@@ -20,12 +20,19 @@ void ft_putnbr(int nbr, const int fd){
 }
 
 void ft_putaddr(const void* const addr, const int fd){
-    write(fd, "0x", 2);
-    short byte;
-    short index;
-    for (size_t x = 0; x < sizeof(void*) * 2; x++){
-        byte = ((char*)addr)[x / 2];
-        index = (x % 2) ? byte & 0x0F : byte >> 4;
-        write(fd, &"0123456789abcdef"[index], 1);
+    static const size_t len = sizeof(void*) * 2;
+    static const char* const base = "0123456789abcdef";
+
+    size_t nbr = (size_t)addr;
+    char str[len + 1];
+    str[0] = '0';
+    str[1] = 'x';
+    str[len] = '\0';
+    size_t x = len;
+    while (nbr){
+        str[x--] = base[nbr % 16];
+        nbr /= 16;
     }
+    while (x >= 2) str[x--] = '0';
+    write(fd, str, len);
 }

@@ -1,103 +1,168 @@
 #include "include/header.h"
-#include <string.h>
 
 #define BUFFER_SIZE 4096
-short offset = -1;
+#define RED "\033[31m"
+#define BLUE "\033[34m"
+#define YELLOW "\033[33m"
 
-char cmd[STACK_BUFFER] = { 0 };
-char target[STACK_BUFFER] = { 0 };
-char value[BUFFER_SIZE] = { 0 };
+static char cmd[STACK_BUFF] = { 0 };
+static char target[STACK_BUFF] = { 0 };
+static char value[BUFFER_SIZE] = { 0 };
 
-char names[STACK_BUFFER][STACK_BUFFER] = { 0 };
-char* values[STACK_BUFFER] = { 0 };
+static char names[STACK_BUFF][STACK_BUFF] = { 0 };
+static char* values[STACK_BUFF] = { 0 };
 
-void test_malloc(){
-    short x, y;
-    for (x = 0; x <= STACK_BUFFER; x++){
-        if (x == STACK_BUFFER){
-            offset++;
-            if (offset < 0) offset = 0;
-            x = offset;
-            for (y = 0; target[y]; y++)
-                names[x][y] = target[y];
-            break;
-        }
-        if (!names[x][0]){
-            for (y = 0; target[y]; y++)
-                names[x][y] = target[y];
-            break;
-        }
-        if (!strcmp(names[x], target)) break;
-    }
-    values[x] = malloc(ft_atoi(value));
-    if (!values[x]){
-        ft_putstr("rly nigga ?", STDERR);
-        for (x = 0; x < STACK_BUFFER && values[x]; x++)
-            free(values[x]);
-        exit(1);
-    }
-}
-
-void print_state(){
-    ft_putstr(GRAY"+-------- " RESET"VARIABLES:\n", STDOUT);
+static void print_state(){
+    ft_putstr(GRAY"+--------" RESET"VARIABLES:\n", STDOUT);
     short x;
-    for (x = 0; x < STACK_BUFFER; x++){
-        if (!names[x]) break;
+    for (x = 0; x < STACK_BUFF; x++){
+        if (!names[x][0]) break;
 
-        ft_putaddr(values[x], STDOUT);
+        if (values[x]) ft_putaddr(values[x], STDOUT);
+        else write(STDOUT, "(null)", 6);
         write(STDOUT, ": ", 2);
         ft_putstr(names[x], STDOUT);
         write(STDOUT, " = ", 3);
-        ft_putstr(values[x], STDOUT);
+        if (values[x]){
+            write(STDOUT, "\"", 1);
+            ft_putstr(values[x], STDOUT);
+            write(STDOUT, "\"", 1);
+        }
+        else write(STDOUT, "(empty)", 7);
+        write(STDOUT, "\n", 1);
     }
-    if (!x) write(STDOUT, "NOTHING\n", 8);
+    if (!x) write(STDOUT, "(empty)\n", 8);
     else{
-        ft_putstr(GRAY"+-------- " RESET"MEMORY:\n", STDOUT);
+        ft_putstr(GRAY"\n+--------" RESET"MEMORY:\n", STDOUT);
         show_alloc_mem_ex();
     }
-    write(STDOUT, "> ", 2);
+    write(STDOUT, "\n> ", 3);
+}
+
+static short ft_strcmp(const char* const str1,
+                       const char* const str2){
+    for (size_t x = 0; str1[x] || str2[x]; x++)
+        if (str1[x] != str2[x]) return 1;
+    return 0;
+}
+
+static ssize_t ft_atoi(const char* str){
+    short neg = 1;
+    if (str[0] == '-'){
+        neg = -1;
+        str++;
+    }
+    ssize_t nbr = 0;
+    for (size_t x = 0; str[x]; x++){
+        if (str[x] < '0' || str[x] > '9') break;
+        nbr = nbr * 10 + str[x] - '0';
+    }
+    return nbr * neg;
+}
+
+static short find_target(){
+    static short offset = -1;
+    short x, y;
+    for (x = 0; x <= STACK_BUFF; x++){
+
+        if (x == STACK_BUFF){
+            offset++;
+            if (offset == STACK_BUFF) offset = 0;
+            x = offset;
+            for (y = 0; target[y]; y++) names[x][y] = target[y];
+            break;
+        }
+        if (!names[x][0]){
+            for (y = 0; target[y]; y++) names[x][y] = target[y];
+            break;
+        }
+        if (!ft_strcmp(names[x], target)) break;
+    }
+    return x;
+}
+
+static short test_malloc(){
+    short x = find_target();
+    values[x] = malloc(ft_atoi(value));
+    if (!values[x]){
+        ft_putstr("rly nigga ?\n", STDERR);
+
+        for (x = 0; x < STACK_BUFF && values[x]; x++)
+            free(values[x]);
+        return -1;
+    }
+    values[x][0] = '\0';
+    return 0;
+}
+
+static short test_realloc(){
+    short x = find_target();
+    values[x] = realloc(values[x], ft_atoi(value));
+    if (!values[x]){
+        ft_putstr("rly nigga ?\n", STDERR);
+
+        for (x = 0; x < STACK_BUFF && values[x]; x++)
+            free(values[x]);
+        return -1;
+    }
+    return 0;
+}
+
+static void test_free(){
+    const short x = find_target();
+    free(values[x]);
+}
+
+static void write_value(){
+    const short x = find_target();
+    for (short y = 0; value[y]; y++) values[x][y] = value[y];
 }
 
 int main(){
-    ft_putstr(GRAY"+-------- "RESET"MALLOC TESTER"
-              GRAY" --------+\n"GRAY"+-------- "RESET"USAGE:\n"
-              "command variable_name [size]\n"
-              GRAY"+-------- "RESET"COMMANDS:\n"
-              "malloc\nrealloc\nfree\nwrite\n", STDOUT);
+    ft_putstr(GRAY"+--------"RESET"MALLOC TESTER"GRAY"--------+"
+              RESET"\nUSAGE: "YELLOW"command "GREEN"variable "
+              BLUE"[value]"RESET"\nCOMMANDS:"YELLOW
+              "\nmalloc\nrealloc\nfree\nwrite\n", STDOUT);
     print_state();
     char buffer[BUFFER_SIZE] = { 0 };
     int x, y, z;
     while (read(0, buffer, BUFFER_SIZE) > 0){
 
-        for (x = 0; buffer[x] && x < STACK_BUFFER; x++){
+        for (x = 0; buffer[x] && x < STACK_BUFF; x++){
             cmd[x] = buffer[x];
-            if (buffer[x] == ' '){
-                cmd[x++] = 0;
+            if (buffer[x] == ' ' || buffer[x] == '\n'){
+                cmd[x++] = '\0';
                 break;
             }
         }
-        for (y = 0; buffer[x + y] && y < STACK_BUFFER; y++){
+        for (y = 0; buffer[x + y] && y < STACK_BUFF; y++){
             target[y] = buffer[x + y];
-            if (buffer[x + y] == '\n'){
-                target[y] = 0;
+            if (buffer[x + y] == ' ' || buffer[x + y] == '\n'){
+                target[y++] = '\0';
                 break;
             }
         }
-        for (z = 0; buffer[x + y + z] && z < BUFFER_SIZE; z++){
+        for (z = 0; buffer[x + y + z] && x + y + z < BUFFER_SIZE;
+             z++){
             value[z] = buffer[x + y + z];
             if (buffer[x + y + z] == '\n'){
-                value[z] = 0;
+                value[z] = '\0';
                 break;
             }
         }
-        if (!strcmp(cmd, "malloc")) test_malloc();
-        else if (!strcmp(cmd, "free")) test_free();
-        else if (!strcmp(cmd, "realloc")) test_realloc();
-        else if (!strcmp(cmd, "write")) write_value();
-        else ft_putstr("UNKNOWN COMMAND\n", STDOUT);
+        if (!ft_strcmp(cmd, "malloc")){
+            if (test_malloc() < 0) break;
+        }
+        else if (!ft_strcmp(cmd, "realloc")){
+            if (test_realloc() < 0) break;
+        }
+        else if (!ft_strcmp(cmd, "free")) test_free();
+        else if (!ft_strcmp(cmd, "write")) write_value();
+        else ft_putstr(RED"unknown command"RESET"\n", STDOUT);
         print_state();
     }
-    ft_putstr(GRAY"+-- "RESET"ISN'T IT OUTSTANDING ? :)"
-              GRAY" --+\n"RESET, STDOUT);
+    ft_putstr(GRAY"+--"RESET"ISN'T IT OUTSTANDING ? :)"
+              GRAY"--+\n"RESET, STDOUT);
+    for (x = 0; x < STACK_BUFF && values[x]; x++) free(values[x]);
     return 0;
 }

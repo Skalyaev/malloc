@@ -42,7 +42,7 @@ static void* get_fixed(Fixed* area, const size_t type,
     const size_t index = area->next_ptr;
     while (area->ptr[area->next_ptr]
         && area->next_ptr < STACK_BUFF - 1)
-        area->next_ptr++
+        area->next_ptr++;
 
     area->free--;
     area->used[index] = size;
@@ -87,12 +87,12 @@ static void* use_existing(Variable* const variable,
 static void* get_variable(size_t size){
     pthread_mutex_lock(&lock);
     Variable** area = &memory.variable;
-    const Variable* prev = NULL;
+    Variable* prev = NULL;
     size_t total;
     size_t offset;
     while (*area){
         total = size + (*area)->used + 0xf;
-        if (total <= (*area)->size{
+        if (total <= (*area)->size){
             offset = (*area)->memory_start - (*area)->memory;
             if (total <= (*area)->size - offset)
                 return use_existing(*area, size, offset);
@@ -112,7 +112,7 @@ static void* get_variable(size_t size){
     (*area)->used = size;
     _set_env(IN_USE, size);
     size += 0xf;
-    if (size < memory.page_size) size = memory.page_size;
+    if (size < (size_t)memory.page_size) size = memory.page_size;
     else size = memory.page_size * (size / memory.page_size + 1);
 
     (*area)->memory = mmap(NULL, size, memory.opt.prot,
@@ -134,11 +134,12 @@ static void* get_variable(size_t size){
 }
 
 void* malloc(size_t size){
+    if (!memory.page_size) _init_memory();
     void* ptr;
-    if (size <= memory.opt.small){
+    if (size <= (size_t)memory.opt.small){
         size_t type;
         Fixed** area;
-        if (size <= memory.opt.tiny){
+        if (size <= (size_t)memory.opt.tiny){
             type = memory.opt.tiny;
             area = &memory.tiny;
         }

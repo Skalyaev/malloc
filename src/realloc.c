@@ -9,7 +9,7 @@ static byte realloc_fixed(void** const ptr, Fixed* area,
         for (size_t x = 0; x < STACK_BUFF - 1; x++){
             if (area->ptr[x] != *ptr) continue;
 
-            if (size <= area->size){
+            if (size <= (size_t)area->size){
                 _set_env(IN_USE, size - area->used[x]);
                 area->used[x] = size;
                 pthread_mutex_unlock(&lock);
@@ -59,7 +59,7 @@ static void* variable2fixed(Variable* const variable,
 static void* realloc_variable(Variable* const ptr, size_t size){
     const size_t used = size;
     size += 0xf;
-    if (size < memory.page_size) size = memory.page_size;
+    if (size < (size_t)memory.page_size) size = memory.page_size;
     else size = memory.page_size * (size / memory.page_size + 1);
 
     void* const new_memory = mmap(NULL, size, memory.opt.prot,
@@ -87,6 +87,7 @@ static void* realloc_variable(Variable* const ptr, size_t size){
 }
 
 void* realloc(void* ptr, size_t size){
+    if (!memory.page_size) _init_memory();
     if (!ptr) return malloc(size);
     if (!size){
         free(ptr);
@@ -105,20 +106,20 @@ void* realloc(void* ptr, size_t size){
         variable; variable = variable->next){
         if (ptr != variable->memory_start) continue;
 
-        if (size <= ptr->size){
-            if (size <= memory.opt.small)
-                return variable2fixed(ptr, size);
+        if (size <= variable->size){
+            if (size <= (size_t)memory.opt.small)
+                return variable2fixed(variable, size);
 
-            _set_env(IN_USE, size - ptr->used);
-            ptr->used = size;
+            _set_env(IN_USE, size - variable->used);
+            variable->used = size;
             pthread_mutex_unlock(&lock);
-            return ptr;
+            return variable;
         }
         return realloc_variable(ptr, size);
     }
     pthread_mutex_unlock(&lock);
     static const char* const err
         = "double free or corruption (out)\n";
-    write(STDERR, err, 33);
+    write(STDERR, err, 32);
     return NULL;
 }

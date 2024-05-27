@@ -4,6 +4,7 @@ extern Memory memory;
 extern pthread_mutex_t lock;
 
 int mallopt(int opt, int value){
+    if (!memory.page_size) _init_memory();
     pthread_mutex_lock(&lock);
     switch (opt){
         case TINY_SIZE:
