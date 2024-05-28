@@ -32,3 +32,26 @@
 | `SMALL_MULT` | `TINY_SIZE * SMALL_MULT` = Taille des blocs de mémoire fixe `SMALL` | 4 |
 | `PROT` | Flags `prot` pour `mmap` | `PROT_READ` \| `PROT_WRITE` |
 | `BZERO` | Initialise la mémoire allouée à 0 | `FALSE` |
+
+## Install
+```bash
+mkdir -p ~/.local/src
+mkdir -p ~/.local/lib
+
+apt update -y
+apt install -y git
+apt install -y make
+apt install -y gcc
+```
+
+```bash
+cd ~/.local/src
+git clone https://github.com/Skalyaeve/malloc.git
+cd malloc && make
+ln -s $PWD/libft_malloc.so ~/.local/lib/libft_malloc.so
+export LD_LIBRARY_PATH=~/.local/lib:$LD_LIBRARY_PATH
+```
+
+```
+LDFLAGS=-L~/.local/lib -lft_malloc
+```
