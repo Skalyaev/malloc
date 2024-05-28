@@ -5,9 +5,9 @@
 #define BLUE "\033[34m"
 #define YELLOW "\033[33m"
 
-static char cmd[STACK_BUFF] = { 0 };
-static char target[STACK_BUFF] = { 0 };
-static char value[BUFFER_SIZE] = { 0 };
+static char cmd[STACK_BUFF];
+static char target[STACK_BUFF];
+static char value[BUFFER_SIZE];
 
 static char names[STACK_BUFF][STACK_BUFF] = { 0 };
 static char* values[STACK_BUFF] = { 0 };
@@ -32,11 +32,8 @@ static void print_state(){
         write(STDOUT, "\n", 1);
     }
     if (!x) write(STDOUT, "(empty)\n", 8);
-    else{
-        ft_putstr(GRAY"\n+--------" RESET"MEMORY:\n", STDOUT);
-        show_alloc_mem_ex();
-    }
-    write(STDOUT, "\n> ", 3);
+    else show_alloc_mem_ex();
+    ft_putstr(GRAY"\n> "RESET, STDOUT);
 }
 
 static short ft_strcmp(const char* const str1,
@@ -91,14 +88,14 @@ static short test_malloc(){
             free(values[x]);
         return -1;
     }
-    values[x][0] = '\0';
     return 0;
 }
 
 static short test_realloc(){
     short x = find_target();
-    values[x] = realloc(values[x], ft_atoi(value));
-    if (!values[x]){
+    const int nbr = ft_atoi(value);
+    values[x] = realloc(values[x], nbr);
+    if (nbr && !values[x]){
         ft_putstr("rly nigga ?\n", STDERR);
 
         for (x = 0; x < STACK_BUFF && values[x]; x++)
@@ -111,6 +108,7 @@ static short test_realloc(){
 static void test_free(){
     const short x = find_target();
     free(values[x]);
+    values[x] = NULL;
 }
 
 static void write_value(){
@@ -127,6 +125,12 @@ int main(){
     char buffer[BUFFER_SIZE] = { 0 };
     int x, y, z;
     while (read(0, buffer, BUFFER_SIZE) > 0){
+        ft_putstr(GRAY"+--------------------> "RED, STDOUT);
+        ft_putstr(buffer, STDOUT);
+        ft_putstr(RESET"\n", STDOUT);
+        ft_bzero(cmd, STACK_BUFF);
+        ft_bzero(target, STACK_BUFF);
+        ft_bzero(value, BUFFER_SIZE);
 
         for (x = 0; buffer[x] && x < STACK_BUFF; x++){
             cmd[x] = buffer[x];
@@ -160,6 +164,7 @@ int main(){
         else if (!ft_strcmp(cmd, "write")) write_value();
         else ft_putstr(RED"unknown command"RESET"\n", STDOUT);
         print_state();
+        ft_bzero(buffer, BUFFER_SIZE);
     }
     ft_putstr(GRAY"+--"RESET"ISN'T IT OUTSTANDING ? :)"
               GRAY"--+\n"RESET, STDOUT);

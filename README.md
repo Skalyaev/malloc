@@ -30,5 +30,5 @@
 |:-|:-:|-:|
 | `TINY_SIZE` | Taille des blocs de mémoire fixe `TINY` | 64 |
 | `SMALL_MULT` | `TINY_SIZE * SMALL_MULT` = Taille des blocs de mémoire fixe `SMALL` | 4 |
-| `BZERO` | Initialise la mémoire allouée à 0 | `FALSE` |
 | `PROT` | Flags `prot` pour `mmap` | `PROT_READ` \| `PROT_WRITE` |
+| `BZERO` | Initialise la mémoire allouée à 0 | `FALSE` |

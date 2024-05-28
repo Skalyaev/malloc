@@ -1,7 +1,7 @@
 #include "../include/header.h"
 
 extern char** environ;
-extern pthread_mutex_t lock;
+extern Mutex lock;
 
 void _set_env(const ushort id, size_t value){
     if (id >= ENV_SIZE) return;
@@ -21,9 +21,9 @@ void _set_env(const ushort id, size_t value){
     char* ptr;
     size_t x;
     size_t y;
-    pthread_mutex_lock(&lock);
     if (!init){
         x = 0;
+        pthread_mutex_lock(&lock.env);
         while (environ[x]) x++;
         environ[x++] = alloc;
         environ[x++] = in_use;
@@ -54,6 +54,7 @@ void _set_env(const ushort id, size_t value){
             ptr[y++] = '=';
             offset[x] = y;
         }
+        pthread_mutex_unlock(&lock.env);
         init++;
     }
     values[id] += value;
@@ -86,10 +87,11 @@ void _set_env(const ushort id, size_t value){
             ptr = intern_freed;
             break;
     }
+    pthread_mutex_lock(&lock.env);
     for (x = 0, y = offset[id]; buffer[x]; x++, y++)
         ptr[y] = buffer[x];
     ptr[y] = '\0';
-    pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&lock.env);
 }
 
 char* _get_env(const ushort id){
@@ -100,12 +102,16 @@ char* _get_env(const ushort id){
         "INTERN_MEM_ALLOCATED", "INTERN_MEM_FREED"
     };
     size_t x, y;
+    pthread_mutex_lock(&lock.env);
     for (x = 0; environ[x]; x++){
         y = 0;
         while (names[id][y] && environ[x][y]
                && environ[x][y] == names[id][y]) y++;
-        if (!names[id][y] && environ[x][y] == '=')
+        if (!names[id][y] && environ[x][y] == '='){
+            pthread_mutex_unlock(&lock.env);
             return environ[x] + y + 1;
+        }
     }
+    pthread_mutex_unlock(&lock.env);
     return NULL;
 }
