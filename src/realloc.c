@@ -14,7 +14,10 @@ static byte realloc_fixed(void** const ptr, const size_t size,
         for (size_t x = 0; x < STACK_BUFF - 1; x++){
             if (area->ptr[x] != *ptr) continue;
 
-            if (size <= (size_t)area->size){
+            if ((type == T_TINY && size <= (size_t)area->size)
+                || (type == T_SMALL
+                    && size <= (size_t)area->size
+                    && size > (size_t)memory.opt.tiny)){
                 _set_env(IN_USE, size - area->used[x]);
                 area->used[x] = size;
                 pthread_mutex_unlock(mptr);
