@@ -109,7 +109,8 @@ static void* get_variable(size_t size){
     _set_env(IN_USE, size);
     size += 0xf;
     if (size < (size_t)memory.page_size) size = memory.page_size;
-    else size = memory.page_size * (size / memory.page_size + 1);
+    else if (size > (size_t)memory.page_size)
+        size = memory.page_size * (size / memory.page_size + 1);
 
     pthread_mutex_lock(&lock.opt);
     (*area)->memory = mmap(NULL, size, memory.opt.prot,

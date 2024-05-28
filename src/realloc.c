@@ -15,9 +15,9 @@ static byte realloc_fixed(void** const ptr, const size_t size,
             if (area->ptr[x] != *ptr) continue;
 
             if ((type == T_TINY && size <= (size_t)area->size)
-                || (type == T_SMALL
-                    && size <= (size_t)area->size
-                    && size > (size_t)memory.opt.tiny)){
+               || (type == T_SMALL
+                  && size <= (size_t)area->size
+                  && size > (size_t)memory.opt.tiny)){
                 _set_env(IN_USE, size - area->used[x]);
                 area->used[x] = size;
                 pthread_mutex_unlock(mptr);
@@ -92,7 +92,8 @@ static void* realloc_variable(Variable* const ptr, size_t size){
     const size_t used = size;
     size += 0xf;
     if (size < (size_t)memory.page_size) size = memory.page_size;
-    else size = memory.page_size * (size / memory.page_size + 1);
+    else if (size > (size_t)memory.page_size)
+        size = memory.page_size * (size / memory.page_size + 1);
 
     pthread_mutex_lock(&lock.opt);
     void* const new_memory = mmap(NULL, size, memory.opt.prot,
@@ -156,7 +157,7 @@ void* realloc(void* ptr, size_t size){
             return variable;
         }
         pthread_mutex_unlock(&lock.variable);
-        return realloc_variable(ptr, size);
+        return realloc_variable(variable, size);
     }
     pthread_mutex_unlock(&lock.variable);
     write(STDERR, "double free or corruption (out)\n", 32);
