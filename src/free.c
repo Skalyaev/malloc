@@ -83,12 +83,26 @@ void _yes_we_free(Variable* const ptr){
         _set_env(INTERN_FREED, memory.variable_size);
     }
     for (tmp = memory.variable; tmp; tmp = tmp->next){
+        if (tmp->used){
+            pthread_mutex_unlock(&lock.variable);
+            return;
+        }
     }
-    _set_env(ALLOC, -ptr->size);
-    _set_env(FREED, ptr->size);
-    _set_env(INTERN_FREED, memory.variable_size);
-    munmap(ptr->memory, ptr->size);
-    munmap(ptr, memory.variable_size);
+    size_t size = 0;
+    size_t count = 0;
+    Variable* old;
+    tmp = memory.variable;
+    while (tmp){
+        old = tmp;
+        tmp = tmp->next;
+        size += old->size;
+        count++;
+        munmap(old->memory, old->size);
+        munmap(old, memory.variable_size);
+    }
+    _set_env(ALLOC, -size);
+    _set_env(FREED, size);
+    _set_env(INTERN_FREED, memory.variable_size * count);
     memory.variable = NULL;
     pthread_mutex_unlock(&lock.variable);
 }
