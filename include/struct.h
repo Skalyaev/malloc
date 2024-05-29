@@ -47,6 +47,7 @@ typedef struct s_mutex{
     pthread_mutex_t env;
     pthread_mutex_t dump;
     pthread_mutex_t init;
+    pthread_mutex_t show;
 }Mutex;
 
 #endif

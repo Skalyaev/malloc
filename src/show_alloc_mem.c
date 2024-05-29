@@ -9,6 +9,7 @@ static void show_dump(const void* const ptr, const size_t size){
               RESET, STDOUT);
 
     char hex[3] = "   ";
+    ssize_t useless42norm;
     for (size_t x = 0; x < size; x += 8){
         if (size > 64 && x == 32){
             ft_putstr(
@@ -20,27 +21,28 @@ static void show_dump(const void* const ptr, const size_t size){
         ft_putstr(GRAY"|  "GREEN, STDOUT);
         for (size_t y = x; y < x + 8; y++){
             if (y >= size){
-                write(STDOUT, "   ", 3);
+                useless42norm = write(STDOUT, "   ", 3);
                 continue;
             }
             hex[0] = base[((byte*)ptr)[y] / 16];
             hex[1] = base[((byte*)ptr)[y] % 16];
-            write(STDOUT, hex, 3);
+            useless42norm = write(STDOUT, hex, 3);
         }
-        write(STDOUT, "  ", 2);
+        useless42norm = write(STDOUT, "  ", 2);
 
         for (size_t y = x; y < x + 8; y++){
             if (y >= size){
-                write(STDOUT, " ", 1);
+                useless42norm = write(STDOUT, " ", 1);
                 continue;
             }
             if (((byte*)ptr)[y] < 32 || ((byte*)ptr)[y] > 126)
-                write(STDOUT, ".", 1);
-            else write(STDOUT, &((byte*)ptr)[y], 1);
+                useless42norm = write(STDOUT, ".", 1);
+            else useless42norm = write(STDOUT, &((byte*)ptr)[y], 1);
         }
         ft_putstr(GRAY"  |-[ "RESET, STDOUT);
         ft_putaddr(ptr + x, STDOUT);
         ft_putstr(GRAY" ]"RESET"\n", STDOUT);
+        (void)useless42norm;
     }
     ft_putstr(GRAY"+--------------------------------------+\n"
               RESET, STDOUT);
@@ -102,6 +104,7 @@ void show_alloc_mem(){
     const bool dump = set_dump(-1);
 
     Fixed* ptr;
+    pthread_mutex_lock(&lock.show);
     pthread_mutex_lock(&lock.tiny);
     if (memory.tiny){
         ft_putstr("\n"GRAY"+----TINY----[ "RESET, STDOUT);
@@ -146,6 +149,7 @@ void show_alloc_mem(){
     ft_putstr("Freed"GRAY"--------[ "GREEN, STDOUT);
     ft_putstr(_get_env(FREED), STDOUT);
     ft_putstr(RESET" bytes"GRAY" ]"RESET"\n", STDOUT);
+    pthread_mutex_unlock(&lock.show);
 }
 
 void show_alloc_mem_ex(){

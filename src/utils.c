@@ -3,20 +3,24 @@
 void ft_putstr(const char* const str, const int fd){
     size_t x = 0;
     while (str[x]) x++;
-    write(fd, str, x);
+    const ssize_t useless42norm
+        = write(fd, str, x);
+    (void)useless42norm;
 }
 
 void ft_putnbr(int nbr, const int fd){
+    ssize_t useless42norm;
     if (nbr < 0){
         if (nbr == -2147483648){
-            write(fd, "-2147483648", 11);
+            useless42norm = write(fd, "-2147483648", 11);
             return;
         }
-        write(fd, "-", 1);
+        useless42norm = write(fd, "-", 1);
         nbr *= -1;
     }
     if (nbr > 9) ft_putnbr(nbr / 10, fd);
-    write(fd, &"0123456789"[nbr % 10], 1);
+    useless42norm = write(fd, &"0123456789"[nbr % 10], 1);
+    (void)useless42norm;
 }
 
 void ft_putaddr(const void* const addr, const int fd){
@@ -31,7 +35,9 @@ void ft_putaddr(const void* const addr, const int fd){
         nbr /= 16;
     }
     while (x > 2) str[--x] = '0';
-    write(fd, str, len);
+    const ssize_t useless42norm
+        = write(fd, str, len);
+    (void)useless42norm;
 }
 
 void ft_bzero(void* const ptr, const size_t size){

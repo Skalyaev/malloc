@@ -126,5 +126,7 @@ void free(void* ptr){
         return;
     }
     pthread_mutex_unlock(&lock.variable);
-    write(STDERR, "free(): invalid pointer\n", 24);
+    const ssize_t useless42norm
+        = write(STDERR, "free(): invalid pointer\n", 24);
+    (void)useless42norm;
 }

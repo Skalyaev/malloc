@@ -9,6 +9,7 @@ Mutex lock = {
     .env = PTHREAD_MUTEX_INITIALIZER,
     .dump = PTHREAD_MUTEX_INITIALIZER,
     .init = PTHREAD_MUTEX_INITIALIZER
+    .show = PTHREAD_MUTEX_INITIALIZER
 };
 
 void _init_memory(){
