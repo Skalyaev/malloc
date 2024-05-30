@@ -7,9 +7,8 @@ Mutex lock = {
     .variable = PTHREAD_MUTEX_INITIALIZER,
     .opt = PTHREAD_MUTEX_INITIALIZER,
     .env = PTHREAD_MUTEX_INITIALIZER,
-    .dump = PTHREAD_MUTEX_INITIALIZER,
-    .init = PTHREAD_MUTEX_INITIALIZER
-    .show = PTHREAD_MUTEX_INITIALIZER
+    .init = PTHREAD_MUTEX_INITIALIZER,
+    .print = PTHREAD_MUTEX_INITIALIZER,
 };
 
 void _init_memory(){
@@ -20,17 +19,17 @@ void _init_memory(){
     }
     memory.page_size = getpagesize();
 
-    static const size_t fixed = sizeof(Fixed);
+    const size_t fixed = sizeof(Fixed);
     if (fixed < (size_t)memory.page_size)
         memory.fixed_size = memory.page_size;
-    else
+    else if (fixed > (size_t)memory.page_size)
         memory.fixed_size = memory.page_size
                           * (fixed / memory.page_size + 1);
 
-    static const size_t variable = sizeof(Variable);
+    const size_t variable = sizeof(Variable);
     if (variable < (size_t)memory.page_size)
         memory.variable_size = memory.page_size;
-    else
+    else if (variable > (size_t)memory.page_size)
         memory.variable_size = memory.page_size
                              * (variable / memory.page_size + 1);
     memory.opt.tiny = TINY;

@@ -9,7 +9,6 @@ static void show_dump(const void* const ptr, const size_t size){
               RESET, STDOUT);
 
     char hex[3] = "   ";
-    ssize_t useless42norm;
     for (size_t x = 0; x < size; x += 8){
         if (size > 64 && x == 32){
             ft_putstr(
@@ -21,28 +20,27 @@ static void show_dump(const void* const ptr, const size_t size){
         ft_putstr(GRAY"|  "GREEN, STDOUT);
         for (size_t y = x; y < x + 8; y++){
             if (y >= size){
-                useless42norm = write(STDOUT, "   ", 3);
+                ft_putstr("   ", STDOUT);
                 continue;
             }
             hex[0] = base[((byte*)ptr)[y] / 16];
             hex[1] = base[((byte*)ptr)[y] % 16];
-            useless42norm = write(STDOUT, hex, 3);
+            ft_putstr(hex, STDOUT);
         }
-        useless42norm = write(STDOUT, "  ", 2);
+        ft_putstr("  ", STDOUT);
 
         for (size_t y = x; y < x + 8; y++){
             if (y >= size){
-                useless42norm = write(STDOUT, " ", 1);
+                ft_putstr(" ", STDOUT);
                 continue;
             }
             if (((byte*)ptr)[y] < 32 || ((byte*)ptr)[y] > 126)
-                useless42norm = write(STDOUT, ".", 1);
-            else useless42norm = write(STDOUT, &((byte*)ptr)[y], 1);
+                ft_putstr(".", STDOUT);
+            else ft_putstr(&((byte*)ptr)[y], STDOUT);
         }
         ft_putstr(GRAY"  |-[ "RESET, STDOUT);
         ft_putaddr(ptr + x, STDOUT);
         ft_putstr(GRAY" ]"RESET"\n", STDOUT);
-        (void)useless42norm;
     }
     ft_putstr(GRAY"+--------------------------------------+\n"
               RESET, STDOUT);
@@ -73,38 +71,44 @@ static Fixed* show_fixed(Fixed* ptr, const bool dump){
     return ptr;
 }
 
-static void show_variable(){
+static void show_variable(const bool dump){
+    Variable* ptr = memory.variable;
     ft_putstr("\n"GRAY"+--VARIABLE--[ "RESET, STDOUT);
-    ft_putaddr(memory.variable->memory, STDOUT);
+    ft_putaddr(ptr->memory[0], STDOUT);
     ft_putstr(GRAY" ]"RESET"\n", STDOUT);
 
-    Variable* ptr = memory.variable;
-    Variable* prev = ptr;
-    while (ptr){
-        ft_putstr(GRAY"|"RESET"\n"GRAY"| [ "RESET, STDOUT);
-        ft_putaddr(ptr->memory_start, STDOUT);
-        ft_putstr(GRAY" ]--[ "RESET, STDOUT);
-        ft_putaddr(ptr->memory_start + ptr->used, STDOUT);
-        ft_putstr(GRAY" ]--> "GREEN, STDOUT);
-        ft_putnbr(ptr->used, STDOUT);
-        ft_putstr(RESET" bytes\n", STDOUT);
-        if (set_dump(-1) == YES) show_dump(ptr->memory, ptr->used);
-        prev = ptr;
+    ushort last = 0;
+    while (YES){
+        for (ushort x = 0; x < BIG_STACK_BUFF; x++){
+            if (ptr->size[x]) last = x;
+            if (!ptr->used[x]) continue;
+            ft_putstr(GRAY"|"RESET"\n"GRAY"| [ "RESET, STDOUT);
+            ft_putaddr(ptr->memory_start[x], STDOUT);
+            ft_putstr(GRAY" ]--[ "RESET, STDOUT);
+            ft_putaddr(ptr->memory_start[x] + ptr->used[x], STDOUT);
+            ft_putstr(GRAY" ]--> "GREEN, STDOUT);
+            ft_putnbr(ptr->used[x], STDOUT);
+            ft_putstr(RESET" bytes\n", STDOUT);
+            if (dump == YES) show_dump(ptr->memory_start[x],
+                                       ptr->used[x]);
+        }
+        if (!ptr->next){
+            ft_putstr(GRAY"|"RESET"\n"GRAY"+------------[ "
+                      RESET, STDOUT);
+            ft_putaddr(ptr->memory[last] + ptr->size[last], STDOUT);
+            ft_putstr(GRAY" ]--VARIABLE-END"RESET"\n", STDOUT);
+            break
+        }
         ptr = ptr->next;
     }
-    ft_putstr(GRAY"|"RESET"\n"GRAY"+------------[ "
-              RESET, STDOUT);
-    ft_putaddr(prev->memory + prev->size, STDOUT);
-    ft_putstr(GRAY" ]--VARIABLE-END"RESET"\n", STDOUT);
 }
 
 void show_alloc_mem(){
     if (!memory.page_size) _init_memory();
-    pthread_mutex_lock(&lock.dump);
     const bool dump = set_dump(-1);
 
     Fixed* ptr;
-    pthread_mutex_lock(&lock.show);
+    pthread_mutex_lock(&lock.print);
     pthread_mutex_lock(&lock.tiny);
     if (memory.tiny){
         ft_putstr("\n"GRAY"+----TINY----[ "RESET, STDOUT);
@@ -132,11 +136,8 @@ void show_alloc_mem(){
     pthread_mutex_unlock(&lock.small);
 
     pthread_mutex_lock(&lock.variable);
-    if (memory.variable) show_variable();
+    if (memory.variable) show_variable(dump);
     pthread_mutex_unlock(&lock.variable);
-
-    set_dump(NO);
-    pthread_mutex_unlock(&lock.dump);
 
     ft_putstr("\nAllocated"GRAY"----[ "GREEN, STDOUT);
     ft_putstr(_get_env(ALLOC), STDOUT);
@@ -149,12 +150,11 @@ void show_alloc_mem(){
     ft_putstr("Freed"GRAY"--------[ "GREEN, STDOUT);
     ft_putstr(_get_env(FREED), STDOUT);
     ft_putstr(RESET" bytes"GRAY" ]"RESET"\n", STDOUT);
-    pthread_mutex_unlock(&lock.show);
+    pthread_mutex_unlock(&lock.print);
+    set_dump(NO);
 }
 
 void show_alloc_mem_ex(){
-    pthread_mutex_lock(&lock.dump);
     set_dump(YES);
-    pthread_mutex_unlock(&lock.dump);
     show_alloc_mem();
 }

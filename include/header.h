@@ -23,9 +23,9 @@ void _yes_we_free_fixed(Fixed* const area, const byte type);
 void _set_env(const ushort id, size_t value);
 char* _get_env(const ushort id);
 
-void ft_putstr(const char* const str, const int fd);
-void ft_putnbr(int nbr, const int fd);
-void ft_putaddr(const void* const addr, const int fd);
+ssize_t ft_putstr(const char* const str, const int fd);
+ssize_t ft_putnbr(int nbr, const int fd);
+ssize_t ft_putaddr(const void* const addr, const int fd);
 void ft_bzero(void* const ptr, const size_t size);
 
 #endif

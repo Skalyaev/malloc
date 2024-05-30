@@ -3,46 +3,50 @@
 extern Memory memory;
 extern Mutex lock;
 
-void _yes_we_free_fixed(Fixed* const area, const byte type){
-    if (!area) return;
-    if (!memory.page_size) _init_memory();
+void _yes_we_free_fixed(Fixed* const ptr,
+                        pthread_mutex_t* const mptr){
+    if (!ptr || !memory.page_size) return;
 
-    pthread_mutex_t* const mptr = type == T_TINY ?
-                                  &lock.tiny : &lock.small;
     pthread_mutex_lock(mptr);
-    Fixed** const tptr = type == T_TINY ?
-                         &memory.tiny : &memory.small;
-    if (area->next) area->next->prev = area->prev;
-    if (area->prev) area->prev->next = area->next;
-    if (*tptr == area) *tptr = area->next;
+    ptr->prev->next = ptr->next;
+    if (ptr->next) ptr->next->prev = ptr->prev;
 
-    const size_t size = area->size * STACK_BUFF;
-    munmap(area->memory, size);
-    munmap(area, memory.fixed_size);
-    pthread_mutex_unlock(mptr);
-    _set_env(ALLOC, -size);
-    _set_env(FREED, size);
+    _set_env(ALLOC, -ptr->size);
+    _set_env(FREED, ptr->size);
+    _set_env(INTERN_ALLOC, -memory.fixed_size);
     _set_env(INTERN_FREED, memory.fixed_size);
+
+    munmap(ptr->memory, ptr->size);
+    munmap(ptr, memory.fixed_size);
+    pthread_mutex_unlock(mptr);
 }
 
 static byte free_fixed(const void* const target, const byte type){
-    pthread_mutex_t* const mptr = type == T_TINY ?
-                                  &lock.tiny : &lock.small;
-    pthread_mutex_lock(mptr);
-    Fixed* area = type == T_TINY ?
-                  memory.tiny : memory.small;
+    Fixed* area;
+    pthread_mutex_t* mptr;
+    switch (type){
+        case T_TINY:
+            mptr = &lock.tiny;
+            pthread_mutex_lock(mptr);
+            area = memory.tiny;
+            break;
+        case T_SMALL:
+            mptr = &lock.small;
+            pthread_mutex_lock(mptr);
+            area = memory.small;
+            break;
+    }
     while (area){
         for (size_t x = 0; x < STACK_BUFF - 1; x++){
             if (area->ptr[x] != target) continue;
 
             _set_env(IN_USE, -area->used[x]);
-            area->used[x] = 0;
-
-            if (++area->free == STACK_BUFF - 1){
+            if (!--area->in_use && area->prev){
                 pthread_mutex_unlock(mptr);
-                _yes_we_free_fixed(area, type);
+                _yes_we_free_fixed(area, mptr);
             }
             else{
+                area->used[x] = 0;
                 if (x < area->next_ptr) area->next_ptr = x;
                 pthread_mutex_unlock(mptr);
             }
@@ -55,78 +59,60 @@ static byte free_fixed(const void* const target, const byte type){
 }
 
 void _yes_we_free(Variable* const ptr){
-    if (!ptr) return;
-    if (!memory.page_size) _init_memory();
+    if (!ptr || !memory.page_size) return;
 
-    Variable* tmp;
     pthread_mutex_lock(&lock.variable);
-    if (ptr->prev
-        && ptr->prev->memory + ptr->prev->size == ptr->memory){
+    ptr->prev->next = ptr->next;
+    if (ptr->next) ptr->next->prev = ptr->prev;
 
-        ptr->memory = ptr->prev->memory;
-        ptr->memory_start = ptr->prev->memory_start;
-        ptr->size += ptr->prev->size;
-        tmp = ptr->prev;
-        ptr->prev = ptr->prev->prev;
-        if (ptr->prev) ptr->prev->next = ptr;
-        munmap(tmp, memory.variable_size);
-        _set_env(INTERN_FREED, memory.variable_size);
+    size_t total = 0;
+    for (ushort y = 0; y < BIG_STACK_BUFF; y++){
+        if (!ptr->size[y]) continue;
+        total += ptr->size[y];
+        munmap(ptr->memory[y], ptr->size[y]);
     }
-    if (ptr->next && !ptr->next->used
-        && ptr->memory + ptr->size == ptr->next->memory){
+    _set_env(ALLOC, -total);
+    _set_env(FREED, total);
+    _set_env(INTERN_ALLOC, -memory.variable_size);
+    _set_env(INTERN_FREED, memory.variable_size);
 
-        ptr->size += ptr->next->size;
-        tmp = ptr->next;
-        ptr->next = ptr->next->next;
-        if (ptr->next) ptr->next->prev = ptr;
-        munmap(tmp, memory.variable_size);
-        _set_env(INTERN_FREED, memory.variable_size);
-    }
-    for (tmp = memory.variable; tmp; tmp = tmp->next){
-        if (tmp->used){
-            pthread_mutex_unlock(&lock.variable);
-            return;
-        }
-    }
-    size_t size = 0;
-    size_t count = 0;
-    Variable* old;
-    tmp = memory.variable;
-    while (tmp){
-        old = tmp;
-        tmp = tmp->next;
-        size += old->size;
-        count++;
-        munmap(old->memory, old->size);
-        munmap(old, memory.variable_size);
-    }
-    _set_env(ALLOC, -size);
-    _set_env(FREED, size);
-    _set_env(INTERN_FREED, memory.variable_size * count);
-    memory.variable = NULL;
+    munmap(ptr, memory.variable_size);
     pthread_mutex_unlock(&lock.variable);
 }
 
 void free(void* ptr){
     if (!ptr) return;
-    if (!memory.page_size) _init_memory();
-
+    if (!memory.page_size){
+        pthread_mutex_lock(&lock.print);
+        ft_putstr("free(): invalid pointer\n", STDERR);
+        pthread_mutex_unlock(&lock.print);
+    }
     if (free_fixed(ptr, T_TINY) == SUCCESS) return;
     if (free_fixed(ptr, T_SMALL) == SUCCESS) return;
 
     pthread_mutex_lock(&lock.variable);
-    for (Variable* variable = memory.variable;
-        variable; variable = variable->next){
-        if (ptr != variable->memory_start) continue;
+    Variable* variable = memory.variable;
+    while (variable){
+        for (ushort x = 0; x < BIG_STACK_BUFF; x++){
+            if (ptr != variable->memory_start[x]) continue;
 
-        _set_env(IN_USE, -variable->used);
-        variable->used = 0;
-        pthread_mutex_unlock(&lock.variable);
-        _yes_we_free(variable);
-        return;
+            _set_env(IN_USE, -variable->used[x]);
+            if (!--variable->in_use && variable->prev){
+                pthread_mutex_unlock(&lock.variable);
+                return _yes_we_free(variable);
+            }
+            else{
+                variable->used[x] = 0;
+                if (x < variable->next_ptr) variable->next_ptr = x;
+                pthread_mutex_unlock(&lock.variable);
+            }
+            return;
+        }
+        variable = variable->next;
     }
     pthread_mutex_unlock(&lock.variable);
-    const ssize_t useless42norm
-        = write(STDERR, "free(): invalid pointer\n", 24);
-    (void)useless42norm;
+
+    pthread_mutex_lock(&lock.print);
+    ft_putstr("free(): invalid pointer\n", STDERR);
+    pthread_mutex_unlock(&lock.print);
 }

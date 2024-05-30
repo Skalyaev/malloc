@@ -2,17 +2,19 @@
 #define STRUCT_H
 
 typedef struct s_options{
-    int tiny;
-    int small;
+    ushort tiny;
+    ushort small;
     int prot;
-    int bzero;
+    bool bzero;
 }Options;
 
 typedef struct s_variable{
-    void* memory;
-    void* memory_start;
-    size_t size;
-    size_t used;
+    void* memory[BIG_STACK_BUFF];
+    void* memory_start[BIG_STACK_BUFF];
+    size_t size[BIG_STACK_BUFF];
+    size_t used[BIG_STACK_BUFF];
+    ushort next_ptr;
+    ushort in_use;
     struct s_variable* prev;
     struct s_variable* next;
 }Variable;
@@ -20,11 +22,11 @@ typedef struct s_variable{
 typedef struct s_fixed{
     void* memory;
     void* memory_start;
-    void* ptr[STACK_BUFF];
-    size_t used[STACK_BUFF];
-    size_t next_ptr;
-    size_t free;
-    size_t size;
+    ushort size;
+    void* ptr[STACK_BUFF - 1];
+    ushort used[STACK_BUFF - 1];
+    ushort next_ptr;
+    ushort in_use;
     struct s_fixed* prev;
     struct s_fixed* next;
 }Fixed;
@@ -45,9 +47,8 @@ typedef struct s_mutex{
     pthread_mutex_t variable;
     pthread_mutex_t opt;
     pthread_mutex_t env;
-    pthread_mutex_t dump;
     pthread_mutex_t init;
-    pthread_mutex_t show;
+    pthread_mutex_t print;
 }Mutex;
 
 #endif
