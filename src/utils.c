@@ -9,7 +9,7 @@ ssize_t ft_putstr(const char* const str, const int fd){
 ssize_t ft_putnbr(int nbr, const int fd){
     ssize_t neg = 0;
     if (nbr < 0){
-        if (nbr == -2147483648 return write(fd, "-2147483648", 11);
+        if (nbr == -2147483648) return write(fd, "-2147483648", 11);
         neg = write(fd, "-", 1);
         nbr *= -1;
     }

@@ -19,7 +19,8 @@ void show_alloc_mem_ex();
 
 void _init_memory();
 void _yes_we_free(Variable* const ptr);
-void _yes_we_free_fixed(Fixed* const area, const byte type);
+void _yes_we_free_fixed(Fixed* const ptr,
+                        pthread_mutex_t* const mptr);
 void _set_env(const ushort id, size_t value);
 char* _get_env(const ushort id);
 

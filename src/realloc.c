@@ -3,7 +3,7 @@
 extern Memory memory;
 extern Mutex lock;
 
-static byte realloc_fixed(void* const ptr, const size_t size,
+static byte realloc_fixed(void** const ptr, const size_t size,
                           const byte type){
     Fixed* area;
     pthread_mutex_t* mptr;
@@ -19,9 +19,10 @@ static byte realloc_fixed(void* const ptr, const size_t size,
             area = memory.small;
             break;
     }
+    size_t x, y;
     while (area){
-        for (size_t x = 0; x < STACK_BUFF - 1; x++){
-            if (area->ptr[x] != ptr) continue;
+        for (x = 0; x < STACK_BUFF - 1; x++){
+            if (area->ptr[x] != *ptr) continue;
 
             if ((type == T_TINY && size <= (size_t)area->size)
                || (type == T_SMALL
@@ -50,14 +51,14 @@ static byte realloc_fixed(void* const ptr, const size_t size,
                 ((byte*)new_ptr)[y] = ((byte*)area->ptr[x])[y];
             if (memory.opt.bzero)
                 while (y < size) ((byte*)new_ptr)[y++] = 0;
-            area->ptr[x] = new_ptr;
+            *ptr = new_ptr;
             pthread_mutex_unlock(new_mptr);
             pthread_mutex_unlock(&lock.opt);
 
             _set_env(IN_USE, -area->used[x]);
             if (--area->in_use && area->prev){
                 pthread_mutex_unlock(mptr);
-                _yes_we_free_fixed(area, type);
+                _yes_we_free_fixed(area, mptr);
             }
             else{
                 area->used[x] = 0;
@@ -84,7 +85,8 @@ static void* variable2fixed(Variable* const ptr,
 
     pthread_mutex_lock(&lock.variable);
     pthread_mutex_lock(mptr);
-    for (size_t y = 0; y < ptr->used[x] && y < size; y++)
+    size_t y;
+    for (y = 0; y < ptr->used[x] && y < size; y++)
         ((byte*)new_ptr)[y] = ((byte*)ptr->memory[x])[y];
     if (memory.opt.bzero)
         while (y < size) ((byte*)new_ptr)[y++] = 0;
@@ -94,7 +96,7 @@ static void* variable2fixed(Variable* const ptr,
     _set_env(IN_USE, -ptr->used[x]);
     if (!--ptr->in_use && ptr->prev){
         pthread_mutex_unlock(&lock.variable);
-        return _yes_we_free(ptr);
+        _yes_we_free(ptr);
     }
     else{
         ptr->used[x] = 0;
@@ -107,10 +109,8 @@ static void* variable2fixed(Variable* const ptr,
 static void* realloc_variable(Variable* const ptr,
                               const ushort x, size_t size){
     const size_t used = size;
-    size += 0xf;
     if (size < (size_t)memory.page_size) size = memory.page_size;
-    else if (size > (size_t)memory.page_size)
-        size = memory.page_size * (size / memory.page_size + 1);
+    else size = memory.page_size * (size / memory.page_size + 1);
 
     pthread_mutex_lock(&lock.opt);
     void* const new_memory = mmap(NULL, size, memory.opt.prot,
@@ -134,7 +134,11 @@ static void* realloc_variable(Variable* const ptr,
     munmap(ptr->memory[x], ptr->size[x]);
 
     ptr->memory[x] = new_memory;
-    ptr->memory_start[x] = (new_memory + 0xf) & ~0xf;
+    if ((size_t)new_memory % 2)
+        ptr->memory_start[x] =
+            (void*)(((size_t)new_memory + 0xf) & ~0xf);
+    else ptr->memory_start[x] = new_memory;
+
     ptr->used[x] = used;
     ptr->size[x] = size;
     pthread_mutex_unlock(&lock.variable);
@@ -152,11 +156,11 @@ void* realloc(void* ptr, size_t size){
         ft_putstr("double free or corruption (out)\n", STDERR);
         pthread_mutex_unlock(&lock.print);
     }
-    byte code = realloc_fixed(ptr, size, T_TINY);
+    byte code = realloc_fixed(&ptr, size, T_TINY);
     if (code == SUCCESS) return ptr;
     if (code < 0) return NULL;
 
-    code = realloc_fixed(ptr, size, T_SMALL);
+    code = realloc_fixed(&ptr, size, T_SMALL);
     if (code == SUCCESS) return ptr;
     if (code < 0) return NULL;
 

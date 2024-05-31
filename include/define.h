@@ -4,7 +4,7 @@
 #define TINY 64
 #define SMALL (TINY * 4)
 #define STACK_BUFF 128
-#define BIG_STACK_BUFF 1024
+#define BIG_STACK_BUFF (STACK_BUFF * 8)
 
 #define T_TINY 0
 #define T_SMALL 1

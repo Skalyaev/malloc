@@ -9,7 +9,10 @@ CC=gcc
 CFLAGS=-Wall -Wextra -Werror -fPIC -O2 -g
 LDFLAGS=-shared
 
-HEADER=include/header.h
+HEADER_EXT=h
+HEADER_DIR=include
+HEADER=$(shell find $(HEADER_DIR) -type f -name "*.$(HEADER_EXT)")
+
 SRC_EXT=c
 SRC_DIR=src
 SRC=$(shell find $(SRC_DIR) -type f -name "*.$(SRC_EXT)")

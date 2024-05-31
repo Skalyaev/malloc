@@ -80,8 +80,9 @@ static short find_target(){
 
 static short test_malloc(){
     short x = find_target();
-    values[x] = malloc(ft_atoi(value));
-    if (!values[x]){
+    const int nbr = ft_atoi(value);
+    values[x] = malloc(nbr);
+    if (!values[x] && nbr){
         ft_putstr("rly nigga ?\n", STDERR);
 
         for (x = 0; x < STACK_BUFF && values[x]; x++)
@@ -92,8 +93,8 @@ static short test_malloc(){
 }
 
 static short test_realloc(){
-    short x = find_target();
     const int nbr = ft_atoi(value);
+    short x = find_target();
     values[x] = realloc(values[x], nbr);
     if (nbr && !values[x]){
         ft_putstr("rly nigga ?\n", STDERR);
@@ -125,9 +126,6 @@ int main(){
     char buffer[BUFFER_SIZE] = { 0 };
     int x, y, z;
     while (read(0, buffer, BUFFER_SIZE) > 0){
-        ft_putstr(GRAY"+--------------------> "RED, STDOUT);
-        ft_putstr(buffer, STDOUT);
-        ft_putstr(RESET"\n", STDOUT);
         ft_bzero(cmd, STACK_BUFF);
         ft_bzero(target, STACK_BUFF);
         ft_bzero(value, BUFFER_SIZE);
@@ -154,6 +152,13 @@ int main(){
                 break;
             }
         }
+        ft_putstr(GRAY"+--------------------> "YELLOW, STDOUT);
+        ft_putstr(cmd, STDOUT);
+        ft_putstr(" "GREEN, STDOUT);
+        ft_putstr(target, STDOUT);
+        ft_putstr(" "BLUE, STDOUT);
+        ft_putstr(value, STDOUT);
+        ft_putstr(RESET"\n", STDOUT);
         if (!ft_strcmp(cmd, "malloc")){
             if (test_malloc() < 0) break;
         }

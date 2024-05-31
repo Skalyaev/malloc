@@ -80,6 +80,40 @@ void _yes_we_free(Variable* const ptr){
     pthread_mutex_unlock(&lock.variable);
 }
 
+void free_variable(Variable* const ptr, const ushort x){
+    ptr->used[x] = 0;
+    byte offset = 0;
+    if (x > 0
+        && ptr->memory[x - 1] + ptr->size[x - 1] == ptr->memory[x]){
+        offset++;
+        ptr->size[x - 1] += ptr->size[x];
+    }
+    if (x < BIG_STACK_BUFF - 1 && !ptr->used[x + 1]
+        && ptr->memory[x] + ptr->size[x] == ptr->memory[x + 1]){
+        offset++;
+        ptr->size[x - 1] += ptr->size[x + 1];
+    }
+    if (offset){
+        short y;
+        if (x < ptr->next_ptr) ptr->next_ptr -= offset;
+        for (y = x; y < BIG_STACK_BUFF - offset; y++){
+
+            ptr->memory[y] = ptr->memory[y + offset];
+            ptr->memory_start[y] = ptr->memory_start[y + offset];
+            ptr->size[y] = ptr->size[y + offset];
+            ptr->used[y] = ptr->used[y + offset];
+        }
+        while (y < BIG_STACK_BUFF){
+            ptr->memory[y] = 0;
+            ptr->memory_start[y] = 0;
+            ptr->size[y] = 0;
+            ptr->used[y] = 0;
+            y++;
+        }
+    }
+    else if (x < ptr->next_ptr) ptr->next_ptr = x;
+}
+
 void free(void* ptr){
     if (!ptr) return;
     if (!memory.page_size){
@@ -102,8 +136,7 @@ void free(void* ptr){
                 return _yes_we_free(variable);
             }
             else{
-                variable->used[x] = 0;
-                if (x < variable->next_ptr) variable->next_ptr = x;
+                free_variable(variable, x);
                 pthread_mutex_unlock(&lock.variable);
             }
             return;

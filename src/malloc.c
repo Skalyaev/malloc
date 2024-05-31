@@ -24,7 +24,8 @@ static Fixed* init_fixed(ushort size){
         return NULL;
     }
     _set_env(ALLOC, size);
-    area->memory_start = (area->memory + 0xf) & ~0xf;
+    area->memory_start = (void*)(((size_t)area->memory + 0xf)
+                       & ~0xf);
     return area;
 }
 
@@ -58,10 +59,8 @@ static int new_variable(Variable* const area, size_t size){
     const int index = area->next_ptr;
     const size_t used = size;
 
-    size += 0xf;
     if (size < (size_t)memory.page_size) size = memory.page_size;
-    else if (size > (size_t)memory.page_size)
-        size = memory.page_size * (size / memory.page_size + 1);
+    else size = memory.page_size * (size / memory.page_size + 1);
 
     pthread_mutex_lock(&lock.opt);
     area->memory[index] = mmap(NULL, size, memory.opt.prot,
@@ -70,7 +69,11 @@ static int new_variable(Variable* const area, size_t size){
         pthread_mutex_unlock(&lock.opt);
         return -1;
     }
-    area->memory_start[index] = (area->memory[0] + 0xf) & ~0xf;
+    if ((size_t)area->memory[index] % 2)
+        area->memory_start[index] =
+            (void*)(((size_t)area->memory[index] + 0xf) & ~0xf);
+    else area->memory_start[index] = area->memory[index];
+
     if (memory.opt.bzero) ft_bzero(area->memory_start[index], used);
     pthread_mutex_unlock(&lock.opt);
     _set_env(ALLOC, size);
@@ -86,19 +89,19 @@ static int new_variable(Variable* const area, size_t size){
 }
 
 static void* split_variable(Variable* const area, const ushort src,
-                            const size_t size){
+                            const size_t size, const ushort offset){
     const ushort dst = area->next_ptr;
-    const size_t start = (area->memory_start[src]
-                       + area->used[src] + 0xf) & ~0xf;
-
-    area->memory[dst] = (void*)start;
-    area->memory_start[dst] = area->memory[dst];
-    area->size[dst] = area->memory[src] + area->size[src]
-                    - area->memory[dst];
+    if (dst != src){
+        area->memory[dst] = area->memory_start[src]
+                          + area->used[src] + offset;
+        area->memory_start[dst] = area->memory[dst];
+        area->size[dst] = area->memory[src] + area->size[src]
+                        - area->memory[dst];
+        area->size[src] -= area->size[dst];
+    }
+    _set_env(IN_USE, size);
     area->used[dst] = size;
     area->in_use++;
-    _set_env(IN_USE, size);
-    area->size[src] -= area->size[dst];
 
     pthread_mutex_lock(&lock.opt);
     if (memory.opt.bzero) ft_bzero(area->memory_start[dst], size);
@@ -122,19 +125,22 @@ static void* get_variable(size_t size){
         }
         area = area->next;
     }
-    for (ushort x = 0; x < area->next_ptr; x++){
+    for (ushort x = 0; x < BIG_STACK_BUFF; x++){
         if (!area->memory[x]) continue;
+        const ushort offset = area->used[x] % 2 ? 1 : 0;
 
-        if (area->used[x] + size + 0xf <= area->size[x]
+        if (area->used[x] + size + offset <= area->size[x]
             - (area->memory_start[x] - area->memory[x]))
-            return split_variable(area, x, size);
+            return split_variable(area, x, size, offset);
     }
     const int index = new_variable(area, size);
     return index < 0 ? NULL : area->memory_start[index];
 }
 
 void* malloc(size_t size){
+    if (!size) return NULL;
     if (!memory.page_size) _init_memory();
+
     void* ptr;
     pthread_mutex_lock(&lock.opt);
     if (size <= (size_t)memory.opt.small){
@@ -143,23 +149,24 @@ void* malloc(size_t size){
         pthread_mutex_t* mptr;
         if (size <= (size_t)memory.opt.tiny){
             type = memory.opt.tiny;
-            area = &memory.tiny;
             mptr = &lock.tiny;
+            pthread_mutex_lock(mptr);
+            area = &memory.tiny;
         }
         else{
             type = memory.opt.small;
-            area = &memory.small;
             mptr = &lock.small;
+            pthread_mutex_lock(mptr);
+            area = &memory.small;
         }
+        pthread_mutex_unlock(&lock.opt);
         if (!*area){
             *area = init_fixed(type);
             if (!*area){
-                pthread_mutex_unlock(&lock.opt);
+                pthread_mutex_unlock(mptr);
                 return NULL;
             }
         }
-        pthread_mutex_unlock(&lock.opt);
-        pthread_mutex_lock(mptr);
         ptr = get_fixed(*area, type, size);
         pthread_mutex_unlock(mptr);
     }

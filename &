@@ -11,9 +11,7 @@ static void show_dump(const void* const ptr,
 
     char hex[4] = "   ";
     hex[3] = 0;
-    static char* green = GREEN;
-    static char* reset = RESET;
-    char* color = green;
+    char color[16] = GREEN;
     for (size_t x = 0; x < size; x += 8){
         if (used > 64 && x == 32){
             ft_putstr(
@@ -22,20 +20,28 @@ static void show_dump(const void* const ptr,
             );
             x = used - 32;
         }
+        if (x == used){
+            color = RESET;
+            x = size - 8;
+        }
         ft_putstr(GRAY"|  ", STDOUT);
+        ft_putstr(color, STDOUT);
         for (size_t y = x; y < x + 8; y++){
-            if (y >= used && color != reset) color = reset;
-
-            ft_putstr(color, STDOUT);
+            if (y >= used){
+                ft_putstr("   ", STDOUT);
+                continue;
+            }
             hex[0] = base[((byte*)ptr)[y] / 16];
             hex[1] = base[((byte*)ptr)[y] % 16];
             ft_putstr(hex, STDOUT);
         }
         ft_putstr("  ", STDOUT);
-        if (x < used) color = green;
-        for (size_t y = x; y < x + 8; y++){
 
-            if (y >= used && color != reset) color = reset;
+        for (size_t y = x; y < x + 8; y++){
+            if (y >= used){
+                ft_putstr(" ", STDOUT);
+                continue;
+            }
             if (((byte*)ptr)[y] < 32 || ((byte*)ptr)[y] > 126)
                 ft_putstr(".", STDOUT);
             else write(STDOUT, &((byte*)ptr)[y], 1);
@@ -65,7 +71,7 @@ static Fixed* show_fixed(Fixed* ptr, const bool dump){
             ft_putstr(GRAY" ]--> "GREEN, STDOUT);
             ft_putnbr(ptr->used[x], STDOUT);
             ft_putstr(RESET" bytes\n", STDOUT);
-            if (dump == YES) show_dump(ptr->ptr[x],
+            if (dump == YES) show_dump(ptr->memory_start[x],
                                        ptr->used[x], ptr->size);
         }
         if (!ptr->next) break;
