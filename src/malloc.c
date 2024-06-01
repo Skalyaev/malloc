@@ -186,6 +186,5 @@ void* malloc(size_t size){
         pthread_mutex_unlock(&lock.variable);
     }
     if (!ptr) errno = ENOMEM;
-    else add2history("malloc ", ptr, size);
     return ptr;
 }

@@ -31,7 +31,6 @@ static byte realloc_fixed(void** const ptr, const size_t size,
 
                 _set_env(IN_USE, size - area->used[x]);
                 area->used[x] = size;
-                add2history("realloc ", *ptr, size);
                 pthread_mutex_unlock(mptr);
                 return SUCCESS;
             }
@@ -57,7 +56,6 @@ static byte realloc_fixed(void** const ptr, const size_t size,
             pthread_mutex_unlock(new_mptr);
             pthread_mutex_unlock(&lock.opt);
 
-            add2history("free ", area->ptr[x], area->used[x]);
             _set_env(IN_USE, -area->used[x]);
             if (--area->in_use && area->prev){
                 pthread_mutex_unlock(mptr);
@@ -96,7 +94,6 @@ static void* variable2fixed(Variable* const ptr,
     pthread_mutex_unlock(mptr);
     pthread_mutex_unlock(&lock.opt);
 
-    add2history("free ", ptr->memory[x], ptr->used[x]);
     _set_env(IN_USE, -ptr->used[x]);
     if (!--ptr->in_use && ptr->prev){
         pthread_mutex_unlock(&lock.variable);
@@ -132,12 +129,10 @@ static void* realloc_variable(Variable* const ptr,
         while (y < used) ((byte*)new_memory)[y++] = 0;
     pthread_mutex_unlock(&lock.opt);
 
-    add2history("malloc ", new_memory, used);
     _set_env(IN_USE, used - ptr->used[x]);
     _set_env(ALLOC, size - ptr->size[x]);
     _set_env(FREED, ptr->size[x]);
     munmap(ptr->memory[x], ptr->size[x]);
-    add2history("free ", ptr->memory[x], ptr->size[x]);
 
     ptr->memory[x] = new_memory;
     if ((size_t)new_memory % 2)
@@ -187,7 +182,6 @@ void* realloc(void* ptr, size_t size){
 
                 _set_env(IN_USE, size - variable->used[x]);
                 variable->used[x] = size;
-                add2history("realloc ", ptr, size);
                 pthread_mutex_unlock(&lock.variable);
                 return ptr;
             }

@@ -40,7 +40,6 @@ static byte free_fixed(const void* const target, const byte type){
         for (size_t x = 0; x < STACK_BUFF - 1; x++){
             if (area->ptr[x] != target) continue;
 
-            add2history("free ", target, area->used[x]);
             _set_env(IN_USE, -area->used[x]);
             if (!--area->in_use && area->prev){
                 pthread_mutex_unlock(mptr);
@@ -131,7 +130,6 @@ void free(void* ptr){
         for (ushort x = 0; x < BIG_STACK_BUFF; x++){
             if (ptr != variable->memory_start[x]) continue;
 
-            add2history("free ", ptr, variable->used[x]);
             _set_env(IN_USE, -variable->used[x]);
             if (!--variable->in_use && variable->prev){
                 pthread_mutex_unlock(&lock.variable);

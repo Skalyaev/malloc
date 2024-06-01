@@ -19,24 +19,20 @@ static void print_state(){
         if (!names[x][0]) break;
 
         if (values[x]) ft_putaddr(values[x], STDOUT);
-        else write(STDOUT, "(null)", 6);
-        write(STDOUT, ": ", 2);
+        else ft_putstr("(null)", STDOUT);
+        ft_putstr(": ", STDOUT);
         ft_putstr(names[x], STDOUT);
-        write(STDOUT, " = ", 3);
+        ft_putstr(" = ", STDOUT);
         if (values[x]){
-            write(STDOUT, "\"", 1);
+            ft_putstr("\"", STDOUT);
             ft_putstr(values[x], STDOUT);
-            write(STDOUT, "\"", 1);
+            ft_putstr("\"", STDOUT);
         }
-        else write(STDOUT, "(empty)", 7);
-        write(STDOUT, "\n", 1);
+        else ft_putstr("(empty)", STDOUT);
+        ft_putstr("\n", STDOUT);
     }
-    if (!x) write(STDOUT, "(empty)\n", 8);
-    else{
-        show_alloc_mem_ex();
-        ft_putstr(GRAY"\n+--------" RESET"HISTORY:\n", STDOUT);
-        show_alloc_hist();
-    }
+    if (!x) ft_putstr("(empty)\n", STDOUT);
+    else show_alloc_mem_ex();
     ft_putstr(GRAY"\n> "RESET, STDOUT);
 }
 

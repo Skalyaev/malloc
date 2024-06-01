@@ -16,9 +16,6 @@ int mallopt(int opt, int value);
 
 void show_alloc_mem();
 void show_alloc_mem_ex();
-void show_alloc_hist();
-void add2history(const char* const str, const void* const ptr,
-                 const size_t size);
 
 void _init_memory();
 void _yes_we_free(Variable* const ptr);
@@ -28,6 +25,8 @@ void _set_env(const ushort id, size_t value);
 char* _get_env(const ushort id);
 
 ssize_t ft_putstr(const char* const str, const int fd);
+ssize_t ft_putnstr(const int size, const char* const str,
+                   const int fd);
 ssize_t ft_putint(int nbr, const int fd);
 ssize_t ft_putaddr(const void* const addr, const int fd);
 void ft_strcpy(char* const dst, const char* const src);

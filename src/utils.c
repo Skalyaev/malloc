@@ -6,6 +6,11 @@ ssize_t ft_putstr(const char* const str, const int fd){
     return write(fd, str, x);
 }
 
+ssize_t ft_putnstr(const int size, const char* const str,
+                   const int fd){
+    return write(fd, str, size);
+}
+
 ssize_t ft_putint(int nbr, const int fd){
     ssize_t neg = 0;
     if (nbr < 0){

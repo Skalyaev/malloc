@@ -42,7 +42,7 @@ static void show_dump(const void* const ptr,
             ft_putstr(color, STDOUT);
             if (((byte*)ptr)[y] < 32 || ((byte*)ptr)[y] > 126)
                 ft_putstr(".", STDOUT);
-            else write(STDOUT, &((byte*)ptr)[y], 1);
+            else ft_putnstr(1, &((byte*)ptr)[y], STDOUT);
         }
         ft_putstr(GRAY"  |-[ "RESET, STDOUT);
         ft_putaddr(ptr + x, STDOUT);
