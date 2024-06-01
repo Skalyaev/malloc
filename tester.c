@@ -13,7 +13,7 @@ static char names[STACK_BUFF][STACK_BUFF] = { 0 };
 static char* values[STACK_BUFF] = { 0 };
 
 static void print_state(){
-    ft_putstr(GRAY"+--------" RESET"VARIABLES:\n", STDOUT);
+    ft_putstr(GRAY"\n+--------" RESET"VARIABLES:\n", STDOUT);
     short x;
     for (x = 0; x < STACK_BUFF; x++){
         if (!names[x][0]) break;
@@ -32,7 +32,11 @@ static void print_state(){
         write(STDOUT, "\n", 1);
     }
     if (!x) write(STDOUT, "(empty)\n", 8);
-    else show_alloc_mem_ex();
+    else{
+        show_alloc_mem_ex();
+        ft_putstr(GRAY"\n+--------" RESET"HISTORY:\n", STDOUT);
+        show_alloc_hist();
+    }
     ft_putstr(GRAY"\n> "RESET, STDOUT);
 }
 
@@ -152,7 +156,7 @@ int main(){
                 break;
             }
         }
-        ft_putstr(GRAY"+--------------------> "YELLOW, STDOUT);
+        ft_putstr(GRAY"+-----------------> "YELLOW, STDOUT);
         ft_putstr(cmd, STDOUT);
         ft_putstr(" "GREEN, STDOUT);
         ft_putstr(target, STDOUT);

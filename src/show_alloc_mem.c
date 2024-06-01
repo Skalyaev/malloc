@@ -14,13 +14,15 @@ static void show_dump(const void* const ptr,
     static char* green = GREEN;
     static char* reset = RESET;
     char* color = green;
+
     for (size_t x = 0; x < size; x += 8){
-        if (used > 64 && x == 32){
+        if ((x >= used && x < size - 8) || (used > 64 && x == 32)){
             ft_putstr(
                 GRAY"|                 ....                 |\n"
                 RESET, STDOUT
             );
-            x = used - 32;
+            if (x >= used && x < size - 8) x = size - 8;
+            else x = used - 32;
         }
         ft_putstr(GRAY"|  ", STDOUT);
         for (size_t y = x; y < x + 8; y++){
@@ -33,9 +35,11 @@ static void show_dump(const void* const ptr,
         }
         ft_putstr("  ", STDOUT);
         if (x < used) color = green;
-        for (size_t y = x; y < x + 8; y++){
 
+        for (size_t y = x; y < x + 8; y++){
             if (y >= used && color != reset) color = reset;
+
+            ft_putstr(color, STDOUT);
             if (((byte*)ptr)[y] < 32 || ((byte*)ptr)[y] > 126)
                 ft_putstr(".", STDOUT);
             else write(STDOUT, &((byte*)ptr)[y], 1);
@@ -57,13 +61,13 @@ static bool set_dump(const byte set){
 static Fixed* show_fixed(Fixed* ptr, const bool dump){
     while (YES){
         for (size_t x = 0; x < STACK_BUFF - 1; x++){
-            if (!ptr->used[x]) continue;
+            if (!ptr->ptr[x]) continue;
             ft_putstr(GRAY"|"RESET"\n"GRAY"| [ "RESET, STDOUT);
             ft_putaddr(ptr->ptr[x], STDOUT);
             ft_putstr(GRAY" ]--[ "RESET, STDOUT);
             ft_putaddr(ptr->ptr[x] + ptr->used[x], STDOUT);
             ft_putstr(GRAY" ]--> "GREEN, STDOUT);
-            ft_putnbr(ptr->used[x], STDOUT);
+            ft_putint(ptr->used[x], STDOUT);
             ft_putstr(RESET" bytes\n", STDOUT);
             if (dump == YES) show_dump(ptr->ptr[x],
                                        ptr->used[x], ptr->size);
@@ -83,17 +87,17 @@ static void show_variable(const bool dump){
     ushort last = 0;
     while (YES){
         for (ushort x = 0; x < BIG_STACK_BUFF; x++){
-            if (ptr->size[x]) last = x;
-            if (!ptr->used[x]) continue;
+            if (!ptr->size[x]) continue;
+            last = x;
             ft_putstr(GRAY"|"RESET"\n"GRAY"| [ "RESET, STDOUT);
             ft_putaddr(ptr->memory_start[x], STDOUT);
             ft_putstr(GRAY" ]--[ "RESET, STDOUT);
             ft_putaddr(ptr->memory_start[x] + ptr->used[x], STDOUT);
             ft_putstr(GRAY" ]--> "GREEN, STDOUT);
-            ft_putnbr(ptr->used[x], STDOUT);
+            ft_putint(ptr->used[x], STDOUT);
             ft_putstr(RESET" bytes\n", STDOUT);
             if (dump == YES) show_dump(ptr->memory_start[x],
-                                       ptr->used[x], ptr->used[x]);
+                                       ptr->used[x], ptr->size[x]);
         }
         if (!ptr->next){
             ft_putstr(GRAY"|"RESET"\n"GRAY"+------------[ "

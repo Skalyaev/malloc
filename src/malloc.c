@@ -147,6 +147,7 @@ void* malloc(size_t size){
         ushort type;
         Fixed** area;
         pthread_mutex_t* mptr;
+
         if (size <= (size_t)memory.opt.tiny){
             type = memory.opt.tiny;
             mptr = &lock.tiny;
@@ -185,5 +186,6 @@ void* malloc(size_t size){
         pthread_mutex_unlock(&lock.variable);
     }
     if (!ptr) errno = ENOMEM;
+    else add2history("malloc ", ptr, size);
     return ptr;
 }

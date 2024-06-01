@@ -39,6 +39,9 @@ typedef struct s_memory{
     size_t fixed_size;
     size_t variable_size;
     Options opt;
+    char history[STACK_BUFF][STACK_BUFF];
+    ushort history_index;
+    ushort history_start;
 }Memory;
 
 typedef struct s_mutex{
@@ -49,6 +52,7 @@ typedef struct s_mutex{
     pthread_mutex_t env;
     pthread_mutex_t init;
     pthread_mutex_t print;
+    pthread_mutex_t history;
 }Mutex;
 
 #endif

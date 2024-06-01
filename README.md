@@ -10,6 +10,7 @@
 * [x] `void free(void* ptr)`: Désalloue la mémoire allouée pointée par `ptr`
 * [x] `void show_alloc_mem()`: Permet de visualiser l'état des zones de mémoire allouées
 * [x] `BONUS` `void show_alloc_mem_ex()`: Ajoute un memory dump à `show_alloc_mem()`
+* [x] `BONUS` `void show_alloc_hist()`: Affiche l'historique des allocation
 * [x] `BONUS` Défragmentation de la mémoire libérée
 * [x] `BONUS` Thread-safe
 * [x] `BONUS` Variables d'environnement de debug
