@@ -14,7 +14,7 @@
 * [x] `BONUS` Défragmentation de la mémoire libérée
 * [x] `BONUS` Thread-safe
 * [x] `BONUS` Variables d'environnement de debug
-* [x] `EXTRA` `int mallopt(int opt, int value)`: Permet de modifier le comportement de la malloc
+* [x] `EXTRA` `int mallopt(int opt, int value)`: Permet de modifier le comportement de malloc
 * [x] `EXTRA` `void* calloc(size_t nmemb, size_t size)`: Alloue de la mémoire pour un tableau de `nmemb` éléments de `size` octets chacun
 
 ### Debug environnement variables
